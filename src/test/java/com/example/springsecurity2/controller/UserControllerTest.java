@@ -1,6 +1,9 @@
 package com.example.springsecurity2.controller;
 
 import com.example.springsecurity2.domain.dto.UserJoinRequest;
+import com.example.springsecurity2.domain.dto.UserLoginRequest;
+import com.example.springsecurity2.exception.AppException;
+import com.example.springsecurity2.exception.ErrorCode;
 import com.example.springsecurity2.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,6 +63,56 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsBytes(new UserJoinRequest(userName,password))))
                 .andDo(print())
                 .andExpect(status().isConflict()); // 회원가입 실패의 경우 충돌나게 설정
+
+    }
+
+    @Test
+    @DisplayName("로그인 성공")
+    void login_success() throws Exception{
+        String userName = "yejin";
+        String password = "1234";
+
+        when(userService.join(any(), any())) //id, pwd
+                .thenReturn("token");
+
+        mockMvc.perform(post("/api/v1/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(new UserLoginRequest(userName,password))))
+                .andDo(print())
+                .andExpect(status().isOk()); // 회원가입 실패의 경우 충돌나게 설정
+
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - userName 없음")
+    void login_fail() throws Exception{
+        String userName = "yejin";
+        String password = "1234";
+
+        when(userService.join(any(), any())) //id, pwd
+                .thenThrow(new AppException(ErrorCode.USERNAME_NOT_FOUND,""));
+
+        mockMvc.perform(post("/api/v1/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(new UserLoginRequest(userName,password))))
+                .andDo(print())
+                .andExpect(status().isNotFound()); // 회원가입 실패의 경우 충돌나게 설정
+
+    }
+    @Test
+    @DisplayName("로그인 실패 -  pwd 틀림")
+    void login_fail2() throws Exception{
+        String userName = "yejin";
+        String password = "1234";
+
+        when(userService.join(any(), any())) //id, pwd
+                .thenThrow(new AppException(ErrorCode.INVALID_PASSWORD,""));
+
+        mockMvc.perform(post("/api/v1/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(new UserLoginRequest(userName,password))))
+                .andDo(print())
+                .andExpect(status().isUnauthorized()); // 회원가입 실패의 경우 충돌나게 설정
 
     }
 }
